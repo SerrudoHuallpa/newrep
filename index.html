@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CineFlow | Gestión de fila</title>
+<style>
+:root{--fondo:#F3F6FB;--blanco:#fff;--navy:#10243A;--azul:#246BFD;--azul-s:#EAF1FF;--verde:#138A72;--naranja:#D97706;--morado:#7953C6;--texto:#1B2B40;--sec:#718096;--borde:#E0E7F0;--rojo:#D64545}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fondo);color:var(--texto);font-family:"Segoe UI",system-ui,sans-serif;font-size:14px;min-height:100vh;display:flex;flex-direction:column}
+header{background:var(--navy);display:flex;justify-content:space-between;align-items:center;padding:16px 26px;flex-wrap:wrap;gap:10px}
+.marca{display:flex;align-items:center;gap:13px}
+.logo{background:var(--azul);color:#fff;font-weight:700;font-size:18px;padding:10px 12px;border-radius:6px}
+.marca b{color:#fff;font-size:18px;display:block}
+.marca small{color:#AFC3D8;font-size:11px;font-weight:700}
+.der{text-align:right;font-size:12px;color:#C4D2E0}.der b{color:#7FE0B8;display:block;margin-bottom:4px}
+main{padding:20px 24px;flex:1;width:100%;max-width:1400px;margin:0 auto}
+h1{font-size:24px;margin:0}
+.sub{color:var(--sec);margin:4px 0 16px}
+.tit{display:flex;justify-content:space-between;align-items:flex-end}
+.tarjetas{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:16px}
+.tj{background:var(--blanco);border:1px solid var(--borde);border-left:4px solid var(--c);padding:12px 14px}
+.tj small{color:var(--sec);font-size:11px;font-weight:700;display:block}
+.tj strong{color:var(--c);font-size:26px;display:block;margin:3px 0}
+.tj span{color:#9AA7B7;font-size:10px;font-weight:700}
+.panel{background:var(--blanco);border:1px solid var(--borde);padding:14px;margin-bottom:16px}
+.panel h2{font-size:13px;margin:0 0 10px}
+.fila{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.fila+.fila{border-top:1px solid var(--borde);margin-top:10px;padding-top:10px}
+.sp{margin-left:auto}
+label.t{color:var(--sec);font-size:12px;font-weight:700}
+input{padding:9px 10px;border:1px solid #C9D4E2;font:inherit;color:var(--texto);background:#fff;min-width:0}
+input:focus,button:focus-visible{outline:2px solid var(--azul);outline-offset:1px}
+button{font:inherit;font-weight:700;font-size:13px;border:0;padding:9px 13px;cursor:pointer;background:#EDF2F8;color:var(--texto)}
+button:hover{background:#DCE6F2}
+button.p{background:var(--azul);color:#fff}button.p:hover{background:#1556D8}
+button.r{background:#FCEBEC;color:var(--rojo)}button.r:hover{background:#F7D7D9}
+.vista h2{display:flex;justify-content:space-between;align-items:center}
+.vista .flag{background:var(--azul-s);color:var(--azul);font-size:11px;padding:5px 10px}
+.vista p{color:var(--sec);margin:0 0 10px;font-size:13px}
+#cola{background:#F7F9FC;min-height:240px;overflow-x:auto;display:flex;align-items:flex-start;gap:0;padding:30px 24px 14px;position:relative;border-bottom:22px solid #E9EFF7}
+.vacio{margin:auto;text-align:center;align-self:center}
+.vacio i{display:grid;place-items:center;width:50px;height:50px;border-radius:50%;background:var(--azul-s);color:var(--azul);font-size:26px;font-style:normal;margin:0 auto 10px}
+.vacio b{display:block;font-size:15px}.vacio span{color:var(--sec);font-size:12px}
+.pers{flex:0 0 100px;text-align:center;position:relative}
+.pers svg{display:block;margin:0 auto}
+.pers .n{font-weight:700;font-size:12px;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
+.pers .k{font-family:Consolas,monospace;font-size:12px;font-weight:700;color:var(--sec)}
+.pers.res .k{color:var(--azul)}
+.prox{position:absolute;top:-20px;left:15px;right:15px;background:var(--azul);color:#fff;font-size:10px;font-weight:700;padding:2px 0}
+.pie{font-size:11px;font-weight:700;color:#74849A;margin-top:8px}
+.abajo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.abajo .panel{margin:0}
+@media(max-width:760px){.abajo{grid-template-columns:1fr}.sp{margin-left:0}}
+footer{background:#E7EDF5;padding:9px 17px;display:flex;justify-content:space-between;font-size:12px;color:#526579;gap:10px;flex-wrap:wrap}
+footer i{color:var(--verde);font-style:normal;margin-right:7px}footer b{font-size:11px;color:#8795A8}
+@media(prefers-reduced-motion:no-preference){.pers{animation:ent .25s ease-out}@keyframes ent{from{opacity:0;transform:translateX(12px)}}}
+</style>
+</head>
+<body>
+<header>
+  <div class="marca"><div class="logo">CF</div><div><b>CINEFLOW</b><small>PANEL DE CONTROL / GESTIÓN DE FILA</small></div></div>
+  <div class="der"><b>● SISTEMA OPERATIVO</b>Cola circular dinámica · FIFO</div>
+</header>
+<main>
+  <div class="tit"><div><h1>Resumen de operaciones</h1><p class="sub">Controla las llegadas, los turnos y la capacidad de la fila en tiempo real.</p></div><b id="fecha" style="color:var(--sec)"></b></div>
+
+  <div class="tarjetas">
+    <div class="tj" style="--c:var(--azul)"><small>PERSONAS EN COLA</small><strong id="vCola">0</strong><span>EN ESPERA</span></div>
+    <div class="tj" style="--c:var(--morado)"><small>CAPACIDAD ACTUAL</small><strong id="vCap">5</strong><span>ESPACIOS DISPONIBLES</span></div>
+    <div class="tj" style="--c:var(--verde)"><small>TOTAL DE LLEGADAS</small><strong id="vLleg">0</strong><span>INGRESOS REGISTRADOS</span></div>
+    <div class="tj" style="--c:var(--naranja)"><small>TOTAL ATENDIDOS</small><strong id="vAt">0</strong><span>TURNOS COMPLETADOS</span></div>
+    <div class="tj" style="--c:#3C536B"><small>USO DE CAPACIDAD</small><strong id="vUso">0 %</strong><span>OCUPACIÓN ACTUAL</span></div>
+  </div>
+
+  <section class="panel">
+    <h2>Operaciones de la fila</h2>
+    <div class="fila">
+      <label class="t" for="nombre">Nombre de la persona</label>
+      <input id="nombre" size="26" autocomplete="off">
+      <button class="p" id="bAgregar">＋ Agregar persona</button>
+      <button id="bAleatorio">🎲 Aleatorio</button>
+      <button id="bCinco">👥 Agregar 5</button>
+      <button class="p sp" id="bAtender">🎟 Atender siguiente</button>
+    </div>
+    <div class="fila">
+      <button id="bSaltar">⏭ Saltar turno</button>
+      <button id="bMover">🔄 Simular movimiento</button>
+      <button class="r" id="bVaciar">🗑 Vaciar cola</button>
+      <button id="bCsv">📄 Exportar CSV</button>
+      <button class="r sp" id="bDetener">⏸ Detener</button>
+      <button id="bIniciar">▶ Iniciar simulación</button>
+    </div>
+  </section>
+
+  <section class="panel vista">
+    <h2>Vista de la fila <span class="flag">FRENTE → FINAL</span></h2>
+    <p>Cada tarjeta representa a una persona. El frente es el próximo turno que será atendido.</p>
+    <div id="cola"></div>
+    <div class="pie" id="pie"></div>
+  </section>
+
+  <div class="abajo">
+    <section class="panel">
+      <h2>Buscar persona o ticket</h2>
+      <div class="fila"><input id="busqueda" style="flex:1" autocomplete="off"><button class="p" id="bBuscar">Buscar</button></div>
+    </section>
+    <section class="panel">
+      <h2>Información del sistema</h2>
+      <span style="color:var(--sec);font-size:13px">FIFO · Primero en entrar, primero en salir.<br>Si la capacidad se completa, el arreglo duplica su tamaño y mantiene el orden.</span>
+    </section>
+  </div>
+</main>
+<footer><span><i>●</i><span id="estado">Sistema listo</span></span><b>CINEFLOW • LABORATORIO DE ESTRUCTURAS DE DATOS</b></footer>
+
+<script>
+// ===== 1. ESTRUCTURA DE DATOS: COLA CIRCULAR DINÁMICA =====
+class ColaCircularDinamica {
+  constructor(capacidad = 5) {
+    this.capacidad = Math.max(1, capacidad);
+    this.datos = new Array(this.capacidad).fill(null);
+    this.frente = 0;
+    this.tamano = 0;
+  }
+  get length() { return this.tamano; }
+  estaVacia() { return this.tamano === 0; }
+  estaLlena() { return this.tamano === this.capacidad; }
+  _redimensionar(nueva = this.capacidad * 2) {
+    nueva = Math.max(nueva, this.tamano + 1);
+    const arr = new Array(nueva).fill(null);
+    for (let i = 0; i < this.tamano; i++) arr[i] = this.datos[(this.frente + i) % this.capacidad];
+    this.datos = arr; this.capacidad = nueva; this.frente = 0;
+  }
+  encolar(e) {
+    if (this.estaLlena()) this._redimensionar();
+    this.datos[(this.frente + this.tamano) % this.capacidad] = e;
+    this.tamano++;
+  }
+  desencolar() {
+    if (this.estaVacia()) return null;
+    const e = this.datos[this.frente];
+    this.datos[this.frente] = null;
+    this.frente = (this.frente + 1) % this.capacidad;
+    this.tamano--;
+    if (this.tamano === 0) this.frente = 0;
+    return e;
+  }
+  obtenerTodos() {
+    return Array.from({ length: this.tamano }, (_, i) => this.datos[(this.frente + i) % this.capacidad]);
+  }
+  buscar(texto) {
+    texto = texto.trim().toLowerCase();
+    if (!texto) return [];
+    return this.obtenerTodos().filter(p => p.nombre.toLowerCase().includes(texto) || p.ticket.toLowerCase().includes(texto));
+  }
+  rotarFrente() {
+    if (this.tamano <= 1) return false;
+    this.encolar(this.desencolar());
+    return true;
+  }
+}
+
+// ===== 2. INTERFAZ =====
+const COLORES = ["#3978D4","#25A18E","#E39A3B","#8D6AD9","#D85B78","#4196B5","#6E9F45","#C66B45","#5C70C8","#239B8E"];
+const NOMBRES = ["Ana","Luis","María","Carlos","Sofía","Diego","Valeria","Mateo","Lucía","Andrés","Camila","Javier","Daniela","Gabriel","Paola","Fernando","Micaela","Rodrigo","Noelia","Ángel","Isabel","Bruno","Renata","Pablo","Elena","Tomás"];
+const APELLIDOS = ["Mamani","Quispe","Flores","Rojas","Vargas","Gómez","Choque","Pérez","López","Cruz","Rivera","Fernández"];
+const $ = id => document.getElementById(id);
+const azar = a => a[Math.floor(Math.random() * a.length)];
+const nombreAzar = () => `${azar(NOMBRES)} ${azar(APELLIDOS)}`;
+const fmt = d => { const p = n => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; };
+
+let cola = new ColaCircularDinamica(5);
+let historial = [], siguienteTicket = 1, llegadas = 0, atendidos = 0;
+let simTimer = null, resaltada = null;
+
+const mensaje = t => $("estado").textContent = t;
+
+function crearPersona(nombre) {
+  return { ticket: "C" + String(siguienteTicket++).padStart(4, "0"), nombre: nombre.trim(), llegada: new Date(), color: azar(COLORES) };
+}
+function registrarAtencion(p) {
+  const salida = new Date();
+  const espera = Math.max(0, Math.floor((salida - p.llegada) / 1000));
+  historial.push({ ticket: p.ticket, nombre: p.nombre, llegada: fmt(p.llegada), atencion: fmt(salida), espera_segundos: espera });
+  atendidos++;
+  return espera;
+}
+
+function agregarPersona() {
+  const nombre = $("nombre").value.trim();
+  if (!nombre) { alert("Escribe el nombre de la persona."); $("nombre").focus(); return; }
+  const p = crearPersona(nombre), antes = cola.capacidad;
+  cola.encolar(p); llegadas++;
+  $("nombre").value = "";
+  mensaje(cola.capacidad > antes ? `¡Cola ampliada! Capacidad: ${antes} → ${cola.capacidad}.` : `${nombre} ingresó a la cola con el ticket ${p.ticket}.`);
+  actualizar();
+}
+function agregarAleatoria() { $("nombre").value = nombreAzar(); agregarPersona(); }
+function agregarVarias(n) {
+  const antes = cola.capacidad;
+  for (let i = 0; i < n; i++) { cola.encolar(crearPersona(nombreAzar())); llegadas++; }
+  actualizar();
+  mensaje(cola.capacidad > antes ? `La cola creció automáticamente: capacidad ${antes} → ${cola.capacidad}.` : `Se agregaron ${n} personas. En cola: ${cola.length}.`);
+}
+function atenderSiguiente() {
+  const p = cola.desencolar();
+  if (!p) { mensaje("No hay personas para atender: la cola está vacía."); alert("Primero agrega una persona a la cola."); return; }
+  const espera = registrarAtencion(p);
+  actualizar();
+  mensaje(`Atendido: ${p.nombre} (${p.ticket}). Esperó ${espera} segundos.`);
+}
+function saltarTurno() {
+  if (cola.length < 2) { mensaje("Se necesitan al menos dos personas para saltar el turno."); return; }
+  const p = cola.desencolar(); cola.encolar(p);
+  actualizar();
+  mensaje(`El turno de ${p.nombre} pasó al final para demostrar el movimiento de la cola.`);
+}
+function moverCola() {
+  if (cola.length < 2) { mensaje("Agrega al menos dos personas para ver el movimiento de la cola."); return; }
+  cola.rotarFrente(); actualizar();
+  mensaje("Movimiento realizado: la persona del frente pasó al final (demostración didáctica).");
+}
+function vaciarCola() {
+  if (simTimer) detenerSimulacion();
+  if (!cola.estaVacia() && !confirm("¿Seguro que deseas quitar a todas las personas de la cola?")) return;
+  cola = new ColaCircularDinamica(Math.max(5, cola.capacidad));
+  actualizar();
+  mensaje("La cola está vacía. El historial de atendidos se conserva.");
+}
+function buscarPersona() {
+  const texto = $("busqueda").value.trim();
+  if (!texto) { mensaje("Escribe un nombre o ticket para buscar."); return; }
+  const r = cola.buscar(texto);
+  if (!r.length) { resaltada = null; actualizar(); mensaje(`No se encontró '${texto}' en la cola actual.`); return; }
+  resaltada = r[0].ticket;
+  actualizar();
+  const pos = cola.obtenerTodos().findIndex(p => p.ticket === r[0].ticket) + 1;
+  mensaje(`Encontrado: ${r[0].nombre} (${r[0].ticket}), posición ${pos} de la cola.`);
+}
+function iniciarSimulacion() {
+  if (simTimer) { mensaje("La simulación ya está activa."); return; }
+  mensaje("Simulación activa: llegarán personas y se atenderán turnos automáticamente.");
+  simTimer = setInterval(pasoSimulacion, 1300);
+}
+function detenerSimulacion() {
+  clearInterval(simTimer); simTimer = null;
+  mensaje("Simulación detenida.");
+}
+function pasoSimulacion() {
+  if (Math.random() < 0.68) {
+    const antes = cola.capacidad;
+    cola.encolar(crearPersona(nombreAzar())); llegadas++;
+    if (cola.capacidad > antes) mensaje(`Simulación: capacidad ampliada a ${cola.capacidad}.`);
+  } else if (!cola.estaVacia()) {
+    registrarAtencion(cola.desencolar());
+  }
+  actualizar();
+}
+function exportarCsv() {
+  const cols = ["ticket","nombre","llegada","atencion","espera_segundos"];
+  const esc = v => `"${String(v).replace(/"/g, '""')}"`;
+  const csv = "\ufeff" + [cols.join(","), ...historial.map(h => cols.map(c => esc(h[c])).join(","))].join("\r\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  a.download = "historial_cine.csv";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  mensaje(`CSV exportado: ${historial.length} registros.`);
+}
+
+function svgPersona(p) {
+  const b = p.ticket === resaltada ? "#F59E0B" : "#26384B", w = p.ticket === resaltada ? 4 : 2;
+  return `<svg width="72" height="100" viewBox="0 0 72 100" aria-hidden="true">
+    <ellipse cx="37" cy="95" rx="25" ry="4" fill="#E0E7F0"/>
+    <line x1="25" y1="38" x2="13" y2="53" stroke="#FFDBAC" stroke-width="7" stroke-linecap="round"/>
+    <line x1="47" y1="38" x2="59" y2="53" stroke="#FFDBAC" stroke-width="7" stroke-linecap="round"/>
+    <line x1="31" y1="65" x2="27" y2="85" stroke="#263238" stroke-width="6" stroke-linecap="round"/>
+    <line x1="41" y1="65" x2="46" y2="85" stroke="#263238" stroke-width="6" stroke-linecap="round"/>
+    <line x1="22" y1="86" x2="31" y2="86" stroke="#263238" stroke-width="5" stroke-linecap="round"/>
+    <line x1="42" y1="86" x2="51" y2="86" stroke="#263238" stroke-width="5" stroke-linecap="round"/>
+    <rect x="24" y="32" width="24" height="33" fill="${p.color}" stroke="${b}" stroke-width="${w}"/>
+    <circle cx="36" cy="17" r="13" fill="#FFDBAC" stroke="${b}" stroke-width="${w}"/>
+    <path d="M23 16 A13 13 0 0 1 49 16 Z" fill="#5D4037"/>
+    <circle cx="31.5" cy="16.5" r="1.6" fill="#263238"/><circle cx="40.5" cy="16.5" r="1.6" fill="#263238"/>
+    <path d="M32 21 Q36.5 25 41 21" fill="none" stroke="#B04B45" stroke-width="1"/>
+  </svg>`;
+}
+
+function actualizar() {
+  const personas = cola.obtenerTodos();
+  $("vCola").textContent = cola.length;
+  $("vCap").textContent = cola.capacidad;
+  $("vLleg").textContent = llegadas;
+  $("vAt").textContent = atendidos;
+  $("vUso").textContent = Math.round(cola.length / cola.capacidad * 100) + " %";
+  $("pie").textContent = `EN FILA: ${personas.length}  •  CAPACIDAD: ${cola.capacidad}  •  ESTRUCTURA FIFO`;
+  const c = $("cola");
+  if (!personas.length) {
+    c.innerHTML = `<div class="vacio"><i>＋</i><b>La fila está vacía</b><span>Agrega una persona para comenzar</span></div>`;
+    return;
+  }
+  c.innerHTML = personas.map((p, i) => `
+    <div class="pers${p.ticket === resaltada ? " res" : ""}">
+      ${i === 0 ? '<div class="prox">PRÓXIMO</div>' : ""}
+      ${svgPersona(p)}
+      <div class="n" title="${p.nombre}">${i + 1}. ${p.nombre.slice(0, 13)}</div>
+      <div class="k">${p.ticket}</div>
+    </div>`).join("");
+}
+
+$("fecha").textContent = new Date().toLocaleDateString("es-BO");
+$("bAgregar").onclick = agregarPersona;
+$("bAleatorio").onclick = agregarAleatoria;
+$("bCinco").onclick = () => agregarVarias(5);
+$("bAtender").onclick = atenderSiguiente;
+$("bSaltar").onclick = saltarTurno;
+$("bMover").onclick = moverCola;
+$("bVaciar").onclick = vaciarCola;
+$("bCsv").onclick = exportarCsv;
+$("bIniciar").onclick = iniciarSimulacion;
+$("bDetener").onclick = detenerSimulacion;
+$("bBuscar").onclick = buscarPersona;
+$("nombre").addEventListener("keydown", e => { if (e.key === "Enter") agregarPersona(); });
+$("busqueda").addEventListener("keydown", e => { if (e.key === "Enter") buscarPersona(); });
+
+actualizar();
+mensaje("Sistema listo. Agrega personas para comenzar.");
+</script>
+</body>
+</html>
